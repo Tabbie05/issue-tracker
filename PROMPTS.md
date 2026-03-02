@@ -112,6 +112,24 @@ Theme context with localStorage persistence. Clean toggle with sun/moon icons.
 
 ---
 
+## Prompt 13 — Deployment Strategy
+**What I asked:**
+> "How to deploy this issue tracker tell me fast"
+
+**What I got:**
+Got a step-by-step guide to deploy using Render.com (free tier) — set up MongoDB Atlas for the database, connect GitHub repo to Render, configure build/start commands and environment variables. Fastest option for Express + React + MongoDB stack.
+
+---
+
+## Prompt 14 — Render CLI Commands
+**What I asked:**
+> "Can you give commands for Render?"
+
+**What I got:**
+Render doesn't have a CLI — it's UI-based. Got the exact field values to fill in (build command: `npm install && cd client && npm install && npm run build`, start command: `node server/index.js`). Also got Railway CLI as an alternative if I wanted command-line deployment.
+
+---
+
 ## Key Debugging Moments
 
 1. **MongoDB connection string** — Initially had `<db_password>` placeholder in the URI. Had to replace with actual password.

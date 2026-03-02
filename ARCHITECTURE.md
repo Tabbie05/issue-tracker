@@ -83,6 +83,29 @@ client/src/
 4. **Separate mobile/desktop views** — Desktop gets a table, mobile gets cards. No CSS hacks, just Tailwind responsive classes.
 5. **Socket.io for real-time** — Server emits events on CRUD operations, client auto-refreshes the dashboard. No manual refresh needed.
 
+## Deployment Architecture
+
+| Component | Service | Details |
+|-----------|---------|---------|
+| **Frontend** | Render (Static) | React app built with Vite, served as static files from `client/dist` in production |
+| **Backend** | Render (Web Service) | Express server serves both the API and the built React app |
+| **Database** | MongoDB Atlas (M0 Free) | Cloud-hosted, accessible from anywhere (`0.0.0.0/0`) |
+| **Real-time** | Socket.io over Render | WebSocket connections handled on the same server |
+
+**Build & Start Commands:**
+- **Build:** `npm install && cd client && npm install && npm run build`
+- **Start:** `node server/index.js`
+
+**Environment Variables (Production):**
+- `MONGODB_URI` — MongoDB Atlas connection string
+- `NODE_ENV` — `production` (enables serving static files from `client/dist`)
+- `PORT` — assigned by Render automatically
+
+**How it works in production:**
+Express serves the built React app for all non-API routes (`*` → `index.html`), and handles API requests on `/api/*`. This single-server approach keeps deployment simple — one service, one URL, no CORS issues between frontend and backend.
+
+---
+
 ## What I'd Improve With More Time
 
 - **Authentication** — Add JWT-based auth so each team member has their own login and can only modify their assigned issues
