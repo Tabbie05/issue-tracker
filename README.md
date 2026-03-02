@@ -110,10 +110,13 @@ issue-tracker/
 ├── PROMPTS.md
 └── vercel.json
 
-<img width="1278" height="701" alt="image" src="https://github.com/user-attachments/assets/56fc20c7-f966-4aff-87df-932283fde3f6" />
+
 
 ```
 
 ## Author
 
 Built by **Tabbie05** as part of a technical assessment.
+
+<img width="1278" height="701" alt="image" src="https://github.com/user-attachments/assets/edb913bd-572a-4394-8bb2-31e8a9b73f73" />
+
