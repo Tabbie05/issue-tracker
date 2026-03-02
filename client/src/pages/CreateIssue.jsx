@@ -57,139 +57,98 @@ export default function CreateIssue() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
-      >
-        <FiArrowLeft size={16} /> Back
+      <button onClick={() => navigate(-1)} className="btn-secondary mb-6">
+        <FiArrowLeft size={15} /> Back
       </button>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Issue</h1>
+      <div className="card-flat p-6 sm:p-8">
+        <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>Create New Issue</h1>
+        <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>Fill in the details below to log a new issue</p>
 
         {serverError && (
-          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-md mb-4">
+          <div className="p-3 rounded-lg mb-5 text-sm" style={{ background: 'var(--color-danger-bg)', color: 'var(--color-danger-text)', border: '1px solid var(--color-danger)' }}>
             {serverError}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Title <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+              Title <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <input
               type="text"
               value={form.title}
               onChange={e => handleChange('title', e.target.value)}
               placeholder="Brief summary of the issue"
-              className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
+              className="input-field"
+              style={errors.title ? { borderColor: 'var(--color-danger)' } : {}}
             />
-            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+            {errors.title && <p className="text-sm mt-1" style={{ color: 'var(--color-danger)' }}>{errors.title}</p>}
           </div>
 
-          {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+              Description <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <textarea
               value={form.description}
               onChange={e => handleChange('description', e.target.value)}
               placeholder="Detailed description of the issue..."
               rows={4}
-              className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                errors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
+              className="input-field"
+              style={errors.description ? { borderColor: 'var(--color-danger)' } : {}}
             />
-            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+            {errors.description && <p className="text-sm mt-1" style={{ color: 'var(--color-danger)' }}>{errors.description}</p>}
           </div>
 
-          {/* Project & Priority row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Project <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+                Project <span style={{ color: 'var(--color-danger)' }}>*</span>
               </label>
-              <select
-                value={form.project}
-                onChange={e => handleChange('project', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 ${
-                  errors.project ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              >
+              <select value={form.project} onChange={e => handleChange('project', e.target.value)} className="select-field" style={errors.project ? { borderColor: 'var(--color-danger)' } : {}}>
                 <option value="">Select Project</option>
                 {meta.projects.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
-              {errors.project && <p className="text-red-500 text-sm mt-1">{errors.project}</p>}
+              {errors.project && <p className="text-sm mt-1" style={{ color: 'var(--color-danger)' }}>{errors.project}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Priority <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+                Priority <span style={{ color: 'var(--color-danger)' }}>*</span>
               </label>
-              <select
-                value={form.priority}
-                onChange={e => handleChange('priority', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 ${
-                  errors.priority ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              >
+              <select value={form.priority} onChange={e => handleChange('priority', e.target.value)} className="select-field" style={errors.priority ? { borderColor: 'var(--color-danger)' } : {}}>
                 <option value="">Select Priority</option>
                 {meta.priorities.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
-              {errors.priority && <p className="text-red-500 text-sm mt-1">{errors.priority}</p>}
+              {errors.priority && <p className="text-sm mt-1" style={{ color: 'var(--color-danger)' }}>{errors.priority}</p>}
             </div>
           </div>
 
-          {/* Assignee & Status row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Assignee <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+                Assignee <span style={{ color: 'var(--color-danger)' }}>*</span>
               </label>
-              <select
-                value={form.assignee}
-                onChange={e => handleChange('assignee', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 ${
-                  errors.assignee ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              >
+              <select value={form.assignee} onChange={e => handleChange('assignee', e.target.value)} className="select-field" style={errors.assignee ? { borderColor: 'var(--color-danger)' } : {}}>
                 <option value="">Select Assignee</option>
                 {meta.assignees.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
-              {errors.assignee && <p className="text-red-500 text-sm mt-1">{errors.assignee}</p>}
+              {errors.assignee && <p className="text-sm mt-1" style={{ color: 'var(--color-danger)' }}>{errors.assignee}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
-              </label>
-              <select
-                value={form.status}
-                onChange={e => handleChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
-              >
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Status</label>
+              <select value={form.status} onChange={e => handleChange('status', e.target.value)} className="select-field">
                 {meta.statuses.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
+          <button type="submit" disabled={submitting} className="btn-primary w-full justify-center" style={{ padding: '0.625rem 1rem' }}>
             {submitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Creating...
-              </>
+              <><div className="animate-spin rounded-full h-4 w-4 border-2 border-transparent border-t-white"></div> Creating...</>
             ) : (
-              <>
-                <FiSave size={16} /> Create Issue
-              </>
+              <><FiSave size={15} /> Create Issue</>
             )}
           </button>
         </form>

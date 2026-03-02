@@ -11,78 +11,58 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+    <nav style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)' }} className="sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">IT</span>
+        <div className="flex justify-between items-center h-14">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--color-primary)' }}>
+              <span className="text-white font-bold text-xs tracking-wide">IT</span>
             </div>
-            <span className="font-bold text-xl text-gray-900 dark:text-white hidden sm:block">
+            <span className="font-semibold text-lg hidden sm:block" style={{ color: 'var(--color-text)' }}>
               Issue Tracker
             </span>
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2">
             <Link
               to="/"
-              className={`flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/')
-                  ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+              className="btn-secondary"
+              style={isActive('/') ? { background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderColor: 'var(--color-primary-subtle)' } : {}}
             >
-              <FiHome size={16} /> Dashboard
+              <FiHome size={15} /> Dashboard
             </Link>
-            <Link
-              to="/create"
-              className="flex items-center gap-1 px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
-            >
-              <FiPlus size={16} /> New Issue
+            <Link to="/create" className="btn-primary">
+              <FiPlus size={15} /> New Issue
             </Link>
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="btn-secondary"
+              style={{ padding: '0.5rem' }}
               title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {dark ? <FiSun size={20} /> : <FiMoon size={20} />}
+              {dark ? <FiSun size={18} /> : <FiMoon size={18} />}
             </button>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-md text-gray-600 dark:text-gray-300"
-            >
-              {dark ? <FiSun size={20} /> : <FiMoon size={20} />}
+          {/* Mobile */}
+          <div className="md:hidden flex items-center gap-1">
+            <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.5rem' }}>
+              {dark ? <FiSun size={18} /> : <FiMoon size={18} />}
             </button>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-md text-gray-600 dark:text-gray-300"
-            >
-              {menuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+            <button onClick={() => setMenuOpen(!menuOpen)} className="btn-secondary" style={{ padding: '0.5rem' }}>
+              {menuOpen ? <FiX size={22} /> : <FiMenu size={22} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden pb-4 space-y-2">
-            <Link
-              to="/"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <FiHome size={16} /> Dashboard
+          <div className="md:hidden pb-3 space-y-1">
+            <Link to="/" onClick={() => setMenuOpen(false)} className="btn-secondary w-full justify-start">
+              <FiHome size={15} /> Dashboard
             </Link>
-            <Link
-              to="/create"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-md bg-indigo-600 text-white"
-            >
-              <FiPlus size={16} /> New Issue
+            <Link to="/create" onClick={() => setMenuOpen(false)} className="btn-primary w-full justify-center">
+              <FiPlus size={15} /> New Issue
             </Link>
           </div>
         )}
