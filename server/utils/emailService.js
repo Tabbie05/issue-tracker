@@ -1,40 +1,24 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Create reusable transporter
-function createTransporter() {
-  const email = process.env.SMTP_EMAIL;
-  const password = process.env.SMTP_PASSWORD;
+let resend = null;
 
-  if (!email || !password) {
-    console.log('Email notifications disabled: SMTP_EMAIL or SMTP_PASSWORD not set');
-    return null;
+function getResend() {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.log('Email notifications disabled: RESEND_API_KEY not set');
+      return null;
+    }
+    resend = new Resend(apiKey);
   }
-
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: email,
-      pass: password,
-    },
-  });
+  return resend;
 }
 
-let transporter = null;
-
-function getTransporter() {
-  if (!transporter) {
-    transporter = createTransporter();
-  }
-  return transporter;
-}
-
-// Send assignment notification email to the assignee's email from the issue
 async function sendAssignmentEmail(issue, type = 'assigned') {
-  const transport = getTransporter();
-  if (!transport) return { success: false, reason: 'SMTP not configured' };
+  const client = getResend();
+  if (!client) return { success: false, reason: 'Resend not configured' };
 
   const recipientEmail = issue.assigneeEmail;
-
   if (!recipientEmail) {
     console.log(`No email provided for assignee: ${issue.assignee}`);
     return { success: false, reason: 'No email provided for assignee' };
@@ -88,13 +72,19 @@ async function sendAssignmentEmail(issue, type = 'assigned') {
   `;
 
   try {
-    await transport.sendMail({
-      from: `"Issue Tracker" <${process.env.SMTP_EMAIL}>`,
-      to: recipientEmail,
+    const { data, error } = await client.emails.send({
+      from: 'Issue Tracker <onboarding@resend.dev>',
+      to: [recipientEmail],
       subject,
       html,
     });
-    console.log(`Email sent to ${issue.assignee} (${recipientEmail})`);
+
+    if (error) {
+      console.error('Resend error:', error);
+      return { success: false, reason: error.message };
+    }
+
+    console.log(`Email sent to ${issue.assignee} (${recipientEmail}), id: ${data.id}`);
     return { success: true };
   } catch (err) {
     console.error('Failed to send email:', err.message);
