@@ -8,9 +8,9 @@ const ICONS = {
 };
 
 const STYLES = {
-  success: { bg: 'var(--color-success-bg)', border: 'var(--color-success)', color: 'var(--color-success-text)', icon: 'var(--color-success)' },
-  error: { bg: 'var(--color-danger-bg)', border: 'var(--color-danger)', color: 'var(--color-danger-text)', icon: 'var(--color-danger)' },
-  info: { bg: 'var(--color-info-bg)', border: 'var(--color-info)', color: 'var(--color-info-text)', icon: 'var(--color-info)' },
+  success: { bg: '#f0fdf4', border: '#16a34a', color: '#166534', icon: '#16a34a' },
+  error: { bg: '#fef2f2', border: '#dc2626', color: '#991b1b', icon: '#dc2626' },
+  info: { bg: '#eff6ff', border: '#2563eb', color: '#1e40af', icon: '#2563eb' },
 };
 
 let addToastFn = null;
@@ -38,25 +38,33 @@ export default function ToastContainer() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  if (toasts.length === 0) return null;
+
   return (
-    <div className="fixed top-16 right-4 z-50 space-y-2" style={{ maxWidth: '380px' }}>
+    <div style={{ position: 'fixed', top: '72px', right: '16px', zIndex: 9999, maxWidth: '380px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {toasts.map(t => {
-        const style = STYLES[t.type] || STYLES.info;
+        const s = STYLES[t.type] || STYLES.info;
         const Icon = ICONS[t.type] || FiInfo;
         return (
           <div
             key={t.id}
-            className="flex items-start gap-3 p-3 rounded-lg shadow-lg animate-slide-in"
             style={{
-              background: style.bg,
-              border: `1px solid ${style.border}`,
-              color: style.color,
-              animation: 'slideIn 0.3s ease-out'
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              padding: '14px 16px',
+              borderRadius: '10px',
+              backgroundColor: s.bg,
+              border: `1px solid ${s.border}`,
+              color: s.color,
+              boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+              animation: 'slideIn 0.3s ease-out',
+              minWidth: '300px',
             }}
           >
-            <Icon size={18} style={{ color: style.icon, flexShrink: 0, marginTop: '1px' }} />
-            <p className="text-sm font-medium flex-1">{t.message}</p>
-            <button onClick={() => removeToast(t.id)} style={{ color: style.color, opacity: 0.6 }}>
+            <Icon size={20} style={{ color: s.icon, flexShrink: 0, marginTop: '1px' }} />
+            <p style={{ fontSize: '14px', fontWeight: 500, flex: 1, margin: 0 }}>{t.message}</p>
+            <button onClick={() => removeToast(t.id)} style={{ color: s.color, opacity: 0.6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
               <FiX size={16} />
             </button>
           </div>

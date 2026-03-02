@@ -1,18 +1,44 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getIssues, updateIssueStatus } from '../api/issueApi';
-import { FiAlertCircle, FiFlag } from 'react-icons/fi';
+import { io } from 'socket.io-client';
+import { FiAlertCircle, FiFlag, FiMessageSquare } from 'react-icons/fi';
+import { toast } from '../components/Toast';
 
 const COLUMNS = ['Open', 'In Progress', 'Resolved', 'Closed'];
 
 const COLUMN_STYLES = {
-  Open: { accent: 'var(--color-warning)', bg: 'var(--color-warning-bg)' },
-  'In Progress': { accent: 'var(--color-info)', bg: 'var(--color-info-bg)' },
-  Resolved: { accent: 'var(--color-success)', bg: 'var(--color-success-bg)' },
-  Closed: { accent: 'var(--color-priority-low)', bg: 'var(--color-priority-low-bg)' },
+  Open: { header: '#f59e0b', headerBg: '#fef3c7', colBg: '#fffbeb', dot: '#f59e0b' },
+  'In Progress': { header: '#6366f1', headerBg: '#e0e7ff', colBg: '#eef2ff', dot: '#6366f1' },
+  Resolved: { header: '#22c55e', headerBg: '#dcfce7', colBg: '#f0fdf4', dot: '#22c55e' },
+  Closed: { header: '#64748b', headerBg: '#e2e8f0', colBg: '#f8fafc', dot: '#64748b' },
 };
 
-const PRIORITY_BADGE = { Low: 'badge-low', Medium: 'badge-medium', High: 'badge-high', Critical: 'badge-critical' };
+const COLUMN_STYLES_DARK = {
+  Open: { header: '#fbbf24', headerBg: '#451a03', colBg: '#1c1917', dot: '#fbbf24' },
+  'In Progress': { header: '#818cf8', headerBg: '#1e1b4b', colBg: '#0f0e1a', dot: '#818cf8' },
+  Resolved: { header: '#4ade80', headerBg: '#052e16', colBg: '#0a1a0f', dot: '#4ade80' },
+  Closed: { header: '#94a3b8', headerBg: '#1e293b', colBg: '#0f172a', dot: '#94a3b8' },
+};
+
+const PRIORITY_COLORS = {
+  Low: '#64748b',
+  Medium: '#2563eb',
+  High: '#ea580c',
+  Critical: '#dc2626',
+};
+
+const AVATAR_COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#22c55e', '#06b6d4'];
+
+function getInitials(name) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase();
+}
+
+function getAvatarColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 
 export default function KanbanBoard() {
   const [issues, setIssues] = useState([]);
@@ -20,6 +46,7 @@ export default function KanbanBoard() {
   const [error, setError] = useState(null);
   const [draggedIssue, setDraggedIssue] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
+  const isDark = document.documentElement.classList.contains('dark');
 
   const fetchIssues = useCallback(async () => {
     try {
@@ -36,6 +63,22 @@ export default function KanbanBoard() {
 
   useEffect(() => { fetchIssues(); }, [fetchIssues]);
 
+  // Real-time updates
+  useEffect(() => {
+    const socket = io(window.location.origin.replace(':5173', ':5000'));
+    socket.on('issueCreated', (issue) => {
+      setIssues(prev => [issue, ...prev]);
+      toast('New issue created!', 'info');
+    });
+    socket.on('issueUpdated', (issue) => {
+      setIssues(prev => prev.map(i => i._id === issue._id ? issue : i));
+    });
+    socket.on('issueDeleted', (id) => {
+      setIssues(prev => prev.filter(i => i._id !== id));
+    });
+    return () => socket.disconnect();
+  }, []);
+
   const handleDragStart = (e, issue) => {
     setDraggedIssue(issue);
     e.dataTransfer.effectAllowed = 'move';
@@ -48,34 +91,29 @@ export default function KanbanBoard() {
     setDragOverColumn(status);
   };
 
-  const handleDragLeave = () => {
-    setDragOverColumn(null);
-  };
+  const handleDragLeave = () => setDragOverColumn(null);
 
   const handleDrop = async (e, newStatus) => {
     e.preventDefault();
     setDragOverColumn(null);
-
     if (!draggedIssue || draggedIssue.status === newStatus) {
       setDraggedIssue(null);
       return;
     }
-
-    // Optimistic update
+    const oldStatus = draggedIssue.status;
     setIssues(prev => prev.map(i => i._id === draggedIssue._id ? { ...i, status: newStatus } : i));
-
     try {
       await updateIssueStatus(draggedIssue._id, newStatus);
+      toast(`Moved to ${newStatus}`, 'success');
     } catch (err) {
-      // Revert on error
-      setIssues(prev => prev.map(i => i._id === draggedIssue._id ? { ...i, status: draggedIssue.status } : i));
-      alert('Failed to update status');
+      setIssues(prev => prev.map(i => i._id === draggedIssue._id ? { ...i, status: oldStatus } : i));
+      toast('Failed to update status', 'error');
     }
-
     setDraggedIssue(null);
   };
 
   const getColumnIssues = (status) => issues.filter(i => i.status === status);
+  const getStyles = (status) => isDark ? COLUMN_STYLES_DARK[status] : COLUMN_STYLES[status];
 
   if (loading) {
     return (
@@ -102,14 +140,14 @@ export default function KanbanBoard() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>Kanban Board</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Drag and drop issues between columns to update status</p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Drag and drop issues to change status</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" style={{ minHeight: '70vh' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5" style={{ minHeight: '75vh' }}>
         {COLUMNS.map(status => {
           const colIssues = getColumnIssues(status);
-          const styles = COLUMN_STYLES[status];
+          const s = getStyles(status);
           const isOver = dragOverColumn === status;
 
           return (
@@ -118,57 +156,88 @@ export default function KanbanBoard() {
               onDragOver={e => handleDragOver(e, status)}
               onDragLeave={handleDragLeave}
               onDrop={e => handleDrop(e, status)}
-              className="rounded-xl p-3 transition-all"
+              className="flex flex-col rounded-2xl overflow-hidden transition-all"
               style={{
-                background: isOver ? styles.bg : 'var(--color-surface-secondary)',
-                border: isOver ? `2px dashed ${styles.accent}` : '2px solid transparent',
-                minHeight: '200px'
+                background: s.colBg,
+                border: isOver ? `2px dashed ${s.header}` : '2px solid transparent',
+                boxShadow: isOver ? `0 0 20px ${s.header}22` : 'none',
               }}
             >
-              {/* Column header */}
-              <div className="flex items-center justify-between mb-3 px-1">
+              {/* Column Header */}
+              <div className="px-4 py-3 flex items-center justify-between" style={{ background: s.headerBg }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: styles.accent }}></div>
-                  <span className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>{status}</span>
+                  <div className="w-3 h-3 rounded-full" style={{ background: s.header }}></div>
+                  <span className="font-bold text-sm" style={{ color: s.header }}>{status}</span>
                 </div>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: styles.bg, color: styles.accent }}>
+                <span className="text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center" style={{ background: s.header, color: 'white' }}>
                   {colIssues.length}
                 </span>
               </div>
 
               {/* Cards */}
-              <div className="space-y-2">
+              <div className="flex-1 p-3 space-y-3 overflow-y-auto" style={{ maxHeight: '65vh' }}>
                 {colIssues.map(issue => (
                   <div
                     key={issue._id}
                     draggable
                     onDragStart={e => handleDragStart(e, issue)}
-                    className="card p-3 cursor-grab active:cursor-grabbing"
+                    className="rounded-xl p-4 cursor-grab active:cursor-grabbing transition-all hover:shadow-md"
                     style={{
-                      opacity: draggedIssue?._id === issue._id ? 0.4 : 1,
-                      borderLeft: `3px solid ${styles.accent}`
+                      background: 'var(--color-surface)',
+                      border: '1px solid var(--color-border)',
+                      opacity: draggedIssue?._id === issue._id ? 0.3 : 1,
+                      transform: draggedIssue?._id === issue._id ? 'scale(0.95)' : 'scale(1)',
                     }}
                   >
+                    {/* Priority indicator */}
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <div className="w-2 h-2 rounded-full" style={{ background: PRIORITY_COLORS[issue.priority] }}></div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: PRIORITY_COLORS[issue.priority] }}>
+                        {issue.priority}
+                      </span>
+                    </div>
+
+                    {/* Title */}
                     <Link
                       to={`/issues/${issue._id}`}
-                      className="font-medium text-sm hover:underline block mb-2"
+                      className="font-semibold text-sm leading-snug hover:underline block mb-3"
                       style={{ color: 'var(--color-text)' }}
                       onClick={e => e.stopPropagation()}
                     >
-                      {issue.title}
+                      {issue.title.length > 55 ? issue.title.slice(0, 55) + '...' : issue.title}
                     </Link>
-                    <div className="flex items-center justify-between">
-                      <span className={`badge ${PRIORITY_BADGE[issue.priority]}`}>
-                        <FiFlag size={10} className="mr-1" />{issue.priority}
+
+                    {/* Project tag */}
+                    <div className="mb-3">
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-md" style={{ background: 'var(--color-surface-secondary)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}>
+                        {issue.project}
                       </span>
-                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{issue.assignee.split(' ')[0]}</span>
                     </div>
-                    <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>{issue.project}</p>
+
+                    {/* Footer: Avatar + Comments */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ background: getAvatarColor(issue.assignee) }}>
+                          {getInitials(issue.assignee)}
+                        </div>
+                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{issue.assignee.split(' ')[0]}</span>
+                      </div>
+                      {issue.comments && issue.comments.length > 0 && (
+                        <div className="flex items-center gap-1" style={{ color: 'var(--color-text-muted)' }}>
+                          <FiMessageSquare size={12} />
+                          <span className="text-xs">{issue.comments.length}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
+
                 {colIssues.length === 0 && (
-                  <div className="text-center py-8 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                    No issues
+                  <div className="text-center py-12 px-4">
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-full flex items-center justify-center" style={{ background: s.headerBg }}>
+                      <span style={{ color: s.header, fontSize: '20px' }}>+</span>
+                    </div>
+                    <p className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>Drop issues here</p>
                   </div>
                 )}
               </div>

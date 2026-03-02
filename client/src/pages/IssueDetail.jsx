@@ -47,12 +47,22 @@ export default function IssueDetail() {
     }
   };
 
+  const [commentError, setCommentError] = useState('');
+
   const handleAddComment = async (e) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    if (!commentAuthor.trim()) {
+      setCommentError('Name is required');
+      return;
+    }
+    if (!commentText.trim()) {
+      setCommentError('Comment text is required');
+      return;
+    }
+    setCommentError('');
     try {
       setSubmittingComment(true);
-      const res = await addComment(id, commentText.trim(), commentAuthor.trim() || 'Anonymous');
+      const res = await addComment(id, commentText.trim(), commentAuthor.trim());
       setIssue(res.data);
       setCommentText('');
       toast('Comment added', 'success');
@@ -196,24 +206,28 @@ export default function IssueDetail() {
           )}
 
           <form onSubmit={handleAddComment} className="space-y-3">
+            {commentError && (
+              <p className="text-sm" style={{ color: 'var(--color-danger)' }}>{commentError}</p>
+            )}
             <input
               type="text"
               value={commentAuthor}
-              onChange={e => setCommentAuthor(e.target.value)}
-              placeholder="Your name (optional)"
+              onChange={e => { setCommentAuthor(e.target.value); setCommentError(''); }}
+              placeholder="Your name *"
               className="input-field"
+              style={commentError && !commentAuthor.trim() ? { borderColor: 'var(--color-danger)' } : {}}
             />
             <div className="flex gap-2">
               <textarea
                 value={commentText}
-                onChange={e => setCommentText(e.target.value)}
+                onChange={e => { setCommentText(e.target.value); setCommentError(''); }}
                 placeholder="Write a comment..."
                 rows={2}
                 className="input-field flex-1"
               />
               <button
                 type="submit"
-                disabled={submittingComment || !commentText.trim()}
+                disabled={submittingComment}
                 className="btn-primary self-end"
               >
                 {submittingComment ? '...' : <FiSend size={16} />}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getIssues, getStats, getMeta, exportCSV } from '../api/issueApi';
 import { io } from 'socket.io-client';
 import { FiSearch, FiDownload, FiAlertCircle, FiFilter, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { toast } from '../components/Toast';
 import StatsCharts from '../components/StatsCharts';
 
 const PRIORITY_BADGE = {
@@ -62,11 +63,18 @@ export default function Dashboard() {
   }, [fetchData]);
 
   useEffect(() => {
-    const socket = io(window.location.origin.replace(':5173', ':5000'));
-    socket.on('issueCreated', () => fetchData());
-    socket.on('issueUpdated', () => fetchData());
-    socket.on('issueDeleted', () => fetchData());
-    return () => socket.disconnect();
+    try {
+      const socketUrl = window.location.hostname === 'localhost'
+        ? window.location.origin.replace(':5173', ':5000')
+        : window.location.origin;
+      const socket = io(socketUrl, { transports: ['websocket', 'polling'] });
+      socket.on('issueCreated', () => { fetchData(); toast('New issue created!', 'info'); });
+      socket.on('issueUpdated', () => fetchData());
+      socket.on('issueDeleted', () => fetchData());
+      return () => socket.disconnect();
+    } catch (e) {
+      // Socket.io not available (e.g., on Vercel serverless)
+    }
   }, [fetchData]);
 
   const clearFilters = () => {
