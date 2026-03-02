@@ -27,7 +27,8 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({ project: '', priority: '', status: '', assignee: '', search: '' });
   const [showFilters, setShowFilters] = useState(false);
-  const [showCharts, setShowCharts] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
 
   const fetchData = useCallback(async () => {
     try {
@@ -71,6 +72,7 @@ export default function Dashboard() {
 
   const clearFilters = () => {
     setFilters({ project: '', priority: '', status: '', assignee: '', search: '' });
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = Object.values(filters).some(v => v);
@@ -209,74 +211,119 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{issues.length} issue{issues.length !== 1 ? 's' : ''} found</p>
+          {(() => {
+            const totalPages = Math.ceil(issues.length / ITEMS_PER_PAGE);
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const paginatedIssues = issues.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-          {/* Desktop table */}
-          <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Priority</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Assignee</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {issues.map(issue => (
-                  <tr key={issue._id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                    <td className="px-4 py-3">
-                      <Link to={`/issues/${issue._id}`} className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
-                        {issue.title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{issue.project}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${PRIORITY_COLORS[issue.priority]}`}>
-                        {issue.priority}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[issue.status]}`}>
-                        {issue.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{issue.assignee}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(issue.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            return (
+              <>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                  Showing {startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, issues.length)} of {issues.length} issue{issues.length !== 1 ? 's' : ''}
+                </p>
 
-          {/* Mobile card view */}
-          <div className="md:hidden space-y-3">
-            {issues.map(issue => (
-              <Link
-                key={issue._id}
-                to={`/issues/${issue._id}`}
-                className="block bg-white dark:bg-gray-800 rounded-lg shadow p-4 hover:shadow-md transition-shadow"
-              >
-                <h3 className="font-medium text-gray-900 dark:text-white mb-2">{issue.title}</h3>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PRIORITY_COLORS[issue.priority]}`}>
-                    {issue.priority}
-                  </span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[issue.status]}`}>
-                    {issue.status}
-                  </span>
+                {/* Desktop table */}
+                <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Priority</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Assignee</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {paginatedIssues.map(issue => (
+                        <tr key={issue._id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+                          <td className="px-4 py-3">
+                            <Link to={`/issues/${issue._id}`} className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                              {issue.title}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{issue.project}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${PRIORITY_COLORS[issue.priority]}`}>
+                              {issue.priority}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[issue.status]}`}>
+                              {issue.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{issue.assignee}</td>
+                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(issue.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>{issue.project}</span>
-                  <span>{issue.assignee}</span>
+
+                {/* Mobile card view */}
+                <div className="md:hidden space-y-3">
+                  {paginatedIssues.map(issue => (
+                    <Link
+                      key={issue._id}
+                      to={`/issues/${issue._id}`}
+                      className="block bg-white dark:bg-gray-800 rounded-lg shadow p-4 hover:shadow-md transition-shadow"
+                    >
+                      <h3 className="font-medium text-gray-900 dark:text-white mb-2">{issue.title}</h3>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PRIORITY_COLORS[issue.priority]}`}>
+                          {issue.priority}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[issue.status]}`}>
+                          {issue.status}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <span>{issue.project}</span>
+                        <span>{issue.assignee}</span>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-              </Link>
-            ))}
-          </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                          currentPage === page
+                            ? 'bg-indigo-600 text-white'
+                            : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </>
       )}
     </div>
