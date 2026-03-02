@@ -111,14 +111,11 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Charts toggle */}
-      <div className="flex justify-between items-center mb-4">
-        <button
-          onClick={() => setShowCharts(!showCharts)}
-          className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
-        >
-          {showCharts ? 'Hide Charts' : 'Show Charts'}
-        </button>
+      {/* Charts */}
+      {stats && <StatsCharts stats={stats} />}
+
+      {/* Export CSV */}
+      <div className="flex justify-end mb-4">
         <button
           onClick={exportCSV}
           className="flex items-center gap-1 text-sm px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
@@ -126,8 +123,6 @@ export default function Dashboard() {
           <FiDownload size={14} /> Export CSV
         </button>
       </div>
-
-      {showCharts && stats && <StatsCharts stats={stats} />}
 
       {/* Search and filter bar */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
