@@ -63,18 +63,14 @@ export default function Dashboard() {
   }, [fetchData]);
 
   useEffect(() => {
+    if (window.location.hostname !== 'localhost') return;
     try {
-      const socketUrl = window.location.hostname === 'localhost'
-        ? window.location.origin.replace(':5173', ':5000')
-        : window.location.origin;
-      const socket = io(socketUrl, { transports: ['websocket', 'polling'] });
+      const socket = io('http://localhost:5000', { timeout: 3000, reconnectionAttempts: 2 });
       socket.on('issueCreated', () => { fetchData(); toast('New issue created!', 'info'); });
       socket.on('issueUpdated', () => fetchData());
       socket.on('issueDeleted', () => fetchData());
       return () => socket.disconnect();
-    } catch (e) {
-      // Socket.io not available (e.g., on Vercel serverless)
-    }
+    } catch (e) {}
   }, [fetchData]);
 
   const clearFilters = () => {
@@ -181,8 +177,31 @@ export default function Dashboard() {
 
       {/* Issues list */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-transparent" style={{ borderTopColor: 'var(--color-primary)', borderRightColor: 'var(--color-primary)' }}></div>
+        <div className="space-y-4">
+          {/* Skeleton stat cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="stat-card animate-pulse">
+                <div className="h-3 w-16 rounded" style={{ background: 'var(--color-border)' }}></div>
+                <div className="h-8 w-12 rounded mt-2" style={{ background: 'var(--color-border)' }}></div>
+              </div>
+            ))}
+          </div>
+          {/* Skeleton table rows */}
+          <div className="card-flat overflow-hidden">
+            <div className="p-4 space-y-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 animate-pulse">
+                  <div className="h-4 flex-1 rounded" style={{ background: 'var(--color-border)' }}></div>
+                  <div className="h-4 w-24 rounded" style={{ background: 'var(--color-border)' }}></div>
+                  <div className="h-5 w-16 rounded-full" style={{ background: 'var(--color-border)' }}></div>
+                  <div className="h-5 w-20 rounded-full" style={{ background: 'var(--color-border)' }}></div>
+                  <div className="h-4 w-24 rounded hidden md:block" style={{ background: 'var(--color-border)' }}></div>
+                  <div className="h-4 w-20 rounded hidden md:block" style={{ background: 'var(--color-border)' }}></div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       ) : issues.length === 0 ? (
         <div className="card-flat p-16 text-center">

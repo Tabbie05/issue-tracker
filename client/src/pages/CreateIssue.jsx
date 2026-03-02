@@ -13,6 +13,7 @@ export default function CreateIssue() {
     project: '',
     priority: '',
     assignee: '',
+    assigneeEmail: '',
     status: 'Open'
   });
   const [errors, setErrors] = useState({});
@@ -30,6 +31,7 @@ export default function CreateIssue() {
     if (!form.project) errs.project = 'Please select a project';
     if (!form.priority) errs.priority = 'Please select a priority';
     if (!form.assignee) errs.assignee = 'Please select an assignee';
+    if (form.assigneeEmail && !/^\S+@\S+\.\S+$/.test(form.assigneeEmail)) errs.assigneeEmail = 'Please enter a valid email';
     return errs;
   };
 
@@ -139,11 +141,26 @@ export default function CreateIssue() {
               {errors.assignee && <p className="text-sm mt-1" style={{ color: 'var(--color-danger)' }}>{errors.assignee}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Status</label>
-              <select value={form.status} onChange={e => handleChange('status', e.target.value)} className="select-field">
-                {meta.statuses.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+                Assignee Email <span className="text-xs font-normal" style={{ color: 'var(--color-text-muted)' }}>(for notification)</span>
+              </label>
+              <input
+                type="email"
+                value={form.assigneeEmail}
+                onChange={e => handleChange('assigneeEmail', e.target.value)}
+                placeholder="assignee@email.com"
+                className="input-field"
+                style={errors.assigneeEmail ? { borderColor: 'var(--color-danger)' } : {}}
+              />
+              {errors.assigneeEmail && <p className="text-sm mt-1" style={{ color: 'var(--color-danger)' }}>{errors.assigneeEmail}</p>}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Status</label>
+            <select value={form.status} onChange={e => handleChange('status', e.target.value)} className="select-field">
+              {meta.statuses.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
           </div>
 
           <button type="submit" disabled={submitting} className="btn-primary w-full justify-center" style={{ padding: '0.625rem 1rem' }}>

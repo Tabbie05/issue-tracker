@@ -16,6 +16,7 @@ export const addComment = (id, text, author) => api.post(`/${id}/comments`, { te
 export const deleteIssue = (id) => api.delete(`/${id}`);
 export const getStats = () => api.get('/stats');
 export const getMeta = () => api.get('/meta');
+export const notifyAssignee = (id) => api.post(`/notify/${id}`);
 export const exportCSV = () => {
   window.open(`${API_BASE}/export/csv`, '_blank');
 };

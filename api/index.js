@@ -20,6 +20,7 @@ async function connectDB() {
 // Import model and routes inline to avoid path issues
 const Issue = require('../server/models/Issue');
 const { validateIssue, validateComment, validateStatusUpdate } = require('../server/middleware/validation');
+const { sendAssignmentEmail } = require('../server/utils/emailService');
 
 // --- ROUTES ---
 
@@ -55,7 +56,7 @@ app.get('/api/issues/export/csv', async (req, res) => {
     await connectDB();
     const issues = await Issue.find().lean();
     const { Parser } = require('json2csv');
-    const fields = ['title', 'description', 'project', 'priority', 'status', 'assignee', 'createdAt', 'updatedAt'];
+    const fields = ['title', 'description', 'project', 'priority', 'status', 'assignee', 'assigneeEmail', 'createdAt', 'updatedAt'];
     const parser = new Parser({ fields });
     const csv = parser.parse(issues);
     res.setHeader('Content-Type', 'text/csv');
@@ -74,6 +75,26 @@ app.get('/api/issues/meta', (req, res) => {
     statuses: Issue.schema.path('status').enumValues,
     assignees: Issue.schema.path('assignee').enumValues
   });
+});
+
+// POST /api/issues/notify/:id
+app.post('/api/issues/notify/:id', async (req, res) => {
+  try {
+    await connectDB();
+    const issue = await Issue.findById(req.params.id);
+    if (!issue) return res.status(404).json({ error: 'Issue not found' });
+    if (!issue.assigneeEmail) {
+      return res.status(400).json({ error: 'No email provided for this assignee. Edit the issue to add an email.' });
+    }
+    const result = await sendAssignmentEmail(issue, 'assigned');
+    if (result.success) {
+      res.json({ message: `Notification sent to ${issue.assignee} (${issue.assigneeEmail})` });
+    } else {
+      res.status(500).json({ error: `Failed to send: ${result.reason}` });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to send notification', details: err.message });
+  }
 });
 
 // GET /api/issues
@@ -117,9 +138,15 @@ app.get('/api/issues/:id', async (req, res) => {
 app.post('/api/issues', validateIssue, async (req, res) => {
   try {
     await connectDB();
-    const { title, description, project, priority, assignee, status } = req.body;
-    const issue = new Issue({ title, description, project, priority, assignee, status: status || 'Open' });
+    const { title, description, project, priority, assignee, assigneeEmail, status } = req.body;
+    const issue = new Issue({ title, description, project, priority, assignee, assigneeEmail, status: status || 'Open' });
     await issue.save();
+
+    // Send email notification to assignee
+    if (assigneeEmail) {
+      sendAssignmentEmail(issue, 'assigned').catch(() => {});
+    }
+
     res.status(201).json(issue);
   } catch (err) {
     if (err.name === 'ValidationError') {
@@ -133,9 +160,20 @@ app.post('/api/issues', validateIssue, async (req, res) => {
 app.put('/api/issues/:id', validateIssue, async (req, res) => {
   try {
     await connectDB();
-    const { title, description, project, priority, assignee, status } = req.body;
-    const issue = await Issue.findByIdAndUpdate(req.params.id, { title, description, project, priority, assignee, status }, { new: true, runValidators: true });
+    const { title, description, project, priority, assignee, assigneeEmail, status } = req.body;
+
+    // Check if assignee changed for email notification
+    const oldIssue = await Issue.findById(req.params.id);
+    const assigneeChanged = oldIssue && oldIssue.assignee !== assignee;
+
+    const issue = await Issue.findByIdAndUpdate(req.params.id, { title, description, project, priority, assignee, assigneeEmail, status }, { new: true, runValidators: true });
     if (!issue) return res.status(404).json({ error: 'Issue not found' });
+
+    // Send email if assignee changed and email provided
+    if (assigneeChanged && assigneeEmail) {
+      sendAssignmentEmail(issue, 'reassigned').catch(() => {});
+    }
+
     res.json(issue);
   } catch (err) {
     if (err.name === 'CastError') return res.status(400).json({ error: 'Invalid issue ID' });

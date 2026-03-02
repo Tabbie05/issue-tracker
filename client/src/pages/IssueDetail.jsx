@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getIssue, updateIssueStatus, addComment, deleteIssue } from '../api/issueApi';
-import { FiArrowLeft, FiClock, FiUser, FiFolder, FiFlag, FiSend, FiTrash2, FiMessageSquare } from 'react-icons/fi';
+import { getIssue, updateIssueStatus, addComment, deleteIssue, notifyAssignee } from '../api/issueApi';
+import { FiArrowLeft, FiClock, FiUser, FiFolder, FiFlag, FiSend, FiTrash2, FiMessageSquare, FiMail } from 'react-icons/fi';
 import { toast } from '../components/Toast';
 
 const PRIORITY_BADGE = { Low: 'badge-low', Medium: 'badge-medium', High: 'badge-high', Critical: 'badge-critical' };
@@ -73,6 +73,20 @@ export default function IssueDetail() {
     }
   };
 
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const handleNotify = async () => {
+    try {
+      setSendingEmail(true);
+      await notifyAssignee(id);
+      toast(`Email notification sent to ${issue.assignee}`, 'success');
+    } catch (err) {
+      toast(err.response?.data?.error || 'Failed to send notification', 'error');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this issue? This cannot be undone.')) return;
     try {
@@ -118,9 +132,14 @@ export default function IssueDetail() {
         <button onClick={() => navigate('/')} className="btn-secondary">
           <FiArrowLeft size={15} /> Back to Dashboard
         </button>
-        <button onClick={handleDelete} className="btn-danger">
-          <FiTrash2 size={14} /> Delete
-        </button>
+        <div className="flex gap-2">
+          <button onClick={handleNotify} disabled={sendingEmail} className="btn-secondary" style={{ color: 'var(--color-primary)' }}>
+            <FiMail size={14} /> {sendingEmail ? 'Sending...' : 'Notify Assignee'}
+          </button>
+          <button onClick={handleDelete} className="btn-danger">
+            <FiTrash2 size={14} /> Delete
+          </button>
+        </div>
       </div>
 
       <div className="card-flat overflow-hidden">
@@ -150,6 +169,9 @@ export default function IssueDetail() {
               <div>
                 <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Assignee</p>
                 <p className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>{issue.assignee}</p>
+                {issue.assigneeEmail && (
+                  <p className="text-xs" style={{ color: 'var(--color-primary)' }}>{issue.assigneeEmail}</p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2.5">

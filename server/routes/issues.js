@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Issue = require('../models/Issue');
 const { validateIssue, validateComment, validateStatusUpdate } = require('../middleware/validation');
+const { sendAssignmentEmail } = require('../utils/emailService');
 
 // GET /api/issues - List all issues with filters
 router.get('/', async (req, res) => {
@@ -57,7 +58,7 @@ router.get('/export/csv', async (req, res) => {
     const issues = await Issue.find().lean();
     const { Parser } = require('json2csv');
 
-    const fields = ['title', 'description', 'project', 'priority', 'status', 'assignee', 'createdAt', 'updatedAt'];
+    const fields = ['title', 'description', 'project', 'priority', 'status', 'assignee', 'assigneeEmail', 'createdAt', 'updatedAt'];
     const parser = new Parser({ fields });
     const csv = parser.parse(issues);
 
@@ -79,6 +80,27 @@ router.get('/meta', async (req, res) => {
   });
 });
 
+// POST /api/issues/notify/:id - Send email notification for an issue
+router.post('/notify/:id', async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id);
+    if (!issue) {
+      return res.status(404).json({ error: 'Issue not found' });
+    }
+    if (!issue.assigneeEmail) {
+      return res.status(400).json({ error: 'No email provided for this assignee. Edit the issue to add an email.' });
+    }
+    const result = await sendAssignmentEmail(issue, 'assigned');
+    if (result.success) {
+      res.json({ message: `Notification sent to ${issue.assignee} (${issue.assigneeEmail})` });
+    } else {
+      res.status(500).json({ error: `Failed to send: ${result.reason}` });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to send notification', details: err.message });
+  }
+});
+
 // GET /api/issues/:id - Get single issue
 router.get('/:id', async (req, res) => {
   try {
@@ -98,12 +120,17 @@ router.get('/:id', async (req, res) => {
 // POST /api/issues - Create new issue
 router.post('/', validateIssue, async (req, res) => {
   try {
-    const { title, description, project, priority, assignee, status } = req.body;
-    const issue = new Issue({ title, description, project, priority, assignee, status: status || 'Open' });
+    const { title, description, project, priority, assignee, assigneeEmail, status } = req.body;
+    const issue = new Issue({ title, description, project, priority, assignee, assigneeEmail, status: status || 'Open' });
     await issue.save();
 
     const io = req.app.get('io');
     if (io) io.emit('issueCreated', issue);
+
+    // Send email notification to assignee
+    if (assigneeEmail) {
+      sendAssignmentEmail(issue, 'assigned').catch(() => {});
+    }
 
     res.status(201).json(issue);
   } catch (err) {
@@ -118,10 +145,15 @@ router.post('/', validateIssue, async (req, res) => {
 // PUT /api/issues/:id - Update issue
 router.put('/:id', validateIssue, async (req, res) => {
   try {
-    const { title, description, project, priority, assignee, status } = req.body;
+    const { title, description, project, priority, assignee, assigneeEmail, status } = req.body;
+
+    // Check if assignee changed for email notification
+    const oldIssue = await Issue.findById(req.params.id);
+    const assigneeChanged = oldIssue && oldIssue.assignee !== assignee;
+
     const issue = await Issue.findByIdAndUpdate(
       req.params.id,
-      { title, description, project, priority, assignee, status },
+      { title, description, project, priority, assignee, assigneeEmail, status },
       { new: true, runValidators: true }
     );
     if (!issue) {
@@ -130,6 +162,11 @@ router.put('/:id', validateIssue, async (req, res) => {
 
     const io = req.app.get('io');
     if (io) io.emit('issueUpdated', issue);
+
+    // Send email if assignee changed and email is provided
+    if (assigneeChanged && assigneeEmail) {
+      sendAssignmentEmail(issue, 'reassigned').catch(() => {});
+    }
 
     res.json(issue);
   } catch (err) {

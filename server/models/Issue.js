@@ -46,6 +46,11 @@ const issueSchema = new mongoose.Schema({
     required: [true, 'Assignee is required'],
     enum: { values: TEAM_MEMBERS, message: 'Invalid assignee' }
   },
+  assigneeEmail: {
+    type: String,
+    trim: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email']
+  },
   comments: [commentSchema]
 }, {
   timestamps: true

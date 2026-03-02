@@ -63,20 +63,23 @@ export default function KanbanBoard() {
 
   useEffect(() => { fetchIssues(); }, [fetchIssues]);
 
-  // Real-time updates
+  // Real-time updates (only on localhost)
   useEffect(() => {
-    const socket = io(window.location.origin.replace(':5173', ':5000'));
-    socket.on('issueCreated', (issue) => {
-      setIssues(prev => [issue, ...prev]);
-      toast('New issue created!', 'info');
-    });
-    socket.on('issueUpdated', (issue) => {
-      setIssues(prev => prev.map(i => i._id === issue._id ? issue : i));
-    });
-    socket.on('issueDeleted', (id) => {
-      setIssues(prev => prev.filter(i => i._id !== id));
-    });
-    return () => socket.disconnect();
+    if (window.location.hostname !== 'localhost') return;
+    try {
+      const socket = io('http://localhost:5000', { timeout: 3000, reconnectionAttempts: 2 });
+      socket.on('issueCreated', (issue) => {
+        setIssues(prev => [issue, ...prev]);
+        toast('New issue created!', 'info');
+      });
+      socket.on('issueUpdated', (issue) => {
+        setIssues(prev => prev.map(i => i._id === issue._id ? issue : i));
+      });
+      socket.on('issueDeleted', (id) => {
+        setIssues(prev => prev.filter(i => i._id !== id));
+      });
+      return () => socket.disconnect();
+    } catch (e) {}
   }, []);
 
   const handleDragStart = (e, issue) => {
