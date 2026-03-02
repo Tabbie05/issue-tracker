@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getIssue, updateIssueStatus, addComment, deleteIssue } from '../api/issueApi';
 import { FiArrowLeft, FiClock, FiUser, FiFolder, FiFlag, FiSend, FiTrash2, FiMessageSquare } from 'react-icons/fi';
+import { toast } from '../components/Toast';
 
 const PRIORITY_BADGE = { Low: 'badge-low', Medium: 'badge-medium', High: 'badge-high', Critical: 'badge-critical' };
 const STATUS_BADGE = { Open: 'badge-open', 'In Progress': 'badge-in-progress', Resolved: 'badge-resolved', Closed: 'badge-closed' };
@@ -38,8 +39,9 @@ export default function IssueDetail() {
       setUpdatingStatus(true);
       const res = await updateIssueStatus(id, newStatus);
       setIssue(res.data);
+      toast(`Status updated to ${newStatus}`, 'success');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update status');
+      toast(err.response?.data?.error || 'Failed to update status', 'error');
     } finally {
       setUpdatingStatus(false);
     }
@@ -53,8 +55,9 @@ export default function IssueDetail() {
       const res = await addComment(id, commentText.trim(), commentAuthor.trim() || 'Anonymous');
       setIssue(res.data);
       setCommentText('');
+      toast('Comment added', 'success');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to add comment');
+      toast(err.response?.data?.error || 'Failed to add comment', 'error');
     } finally {
       setSubmittingComment(false);
     }
@@ -64,9 +67,10 @@ export default function IssueDetail() {
     if (!window.confirm('Are you sure you want to delete this issue? This cannot be undone.')) return;
     try {
       await deleteIssue(id);
-      navigate('/', { state: { message: 'Issue deleted successfully' } });
+      toast('Issue deleted', 'success');
+      navigate('/');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to delete issue');
+      toast(err.response?.data?.error || 'Failed to delete issue', 'error');
     }
   };
 

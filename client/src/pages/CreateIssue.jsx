@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createIssue, getMeta } from '../api/issueApi';
 import { FiArrowLeft, FiSave } from 'react-icons/fi';
+import { toast } from '../components/Toast';
 
 export default function CreateIssue() {
   const navigate = useNavigate();
@@ -42,7 +43,8 @@ export default function CreateIssue() {
     setServerError(null);
     try {
       await createIssue(form);
-      navigate('/', { state: { message: 'Issue created successfully!' } });
+      toast('Issue created successfully!', 'success');
+      navigate('/');
     } catch (err) {
       setServerError(err.response?.data?.details?.join(', ') || err.response?.data?.error || 'Failed to create issue');
     } finally {

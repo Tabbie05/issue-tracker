@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { FiSun, FiMoon, FiPlus, FiHome, FiMenu, FiX } from 'react-icons/fi';
+import { FiSun, FiMoon, FiPlus, FiHome, FiMenu, FiX, FiColumns } from 'react-icons/fi';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -32,6 +32,13 @@ export default function Navbar() {
             >
               <FiHome size={15} /> Dashboard
             </Link>
+            <Link
+              to="/kanban"
+              className="btn-secondary"
+              style={isActive('/kanban') ? { background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderColor: 'var(--color-primary-subtle)' } : {}}
+            >
+              <FiColumns size={15} /> Kanban
+            </Link>
             <Link to="/create" className="btn-primary">
               <FiPlus size={15} /> New Issue
             </Link>
@@ -60,6 +67,9 @@ export default function Navbar() {
           <div className="md:hidden pb-3 space-y-1">
             <Link to="/" onClick={() => setMenuOpen(false)} className="btn-secondary w-full justify-start">
               <FiHome size={15} /> Dashboard
+            </Link>
+            <Link to="/kanban" onClick={() => setMenuOpen(false)} className="btn-secondary w-full justify-start">
+              <FiColumns size={15} /> Kanban
             </Link>
             <Link to="/create" onClick={() => setMenuOpen(false)} className="btn-primary w-full justify-center">
               <FiPlus size={15} /> New Issue
